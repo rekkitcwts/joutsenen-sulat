@@ -1,8 +1,37 @@
+const { spawn } = require('child_process');
 const express = require("express");
+const tmp = require("tmp");
+const fs = require("fs");
 const app = express();
+const path = '/tmp/guide.xml';
 const port = process.env.PORT || 3001;
 
+// From Render AI assistant
+const tmpFile = tmp.fileSync();
+fs.writeFileSync(tmpFile.name, "temporary data");
+
+const tmpDir = tmp.dirSync();
+
 app.get("/", (req, res) => res.type('html').send(html));
+app.get("/health", (req, res) => res.type('html').send(html));
+app.get("/epg.xml", (req, res) => {
+  const args = ['run', 'grab', '--', '--site=savedchannels.xml', `--output=${path}`];
+  const grab = spawn('npm', args);
+
+  grab.on('close', (code) => {
+    if (code === 0) {
+      res.setHeader('Content-Type', 'application/xml');
+      fs.createReadStream(path).pipe(res);
+    } else {
+      res.status(500).send('Error generating EPG');
+    }
+  });
+  
+  grab.on('error', (err) => {
+    console.error('Spawn error:', err);
+    res.status(500).send('Execution failed');
+  });
+});
 
 const server = app.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
