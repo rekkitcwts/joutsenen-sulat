@@ -68,7 +68,7 @@ app.get("/epg.xml", (req, res) => {
     console.log(`[EPG] Timeout reset to ${timeoutDuration/1000} seconds`);
   };
 
-  const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`, `--maxConnections=2`];
+  const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
   console.log(`[EPG] Command: npm ${args.join(' ')}`);
 
   const grab = spawn('npm', args, {
