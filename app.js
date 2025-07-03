@@ -25,12 +25,15 @@ app.get("/epg.xml", (req, res) => {
   console.log(`[EPG] Temp file: ${tempFile.name}`);
 
   let hasResponded = false;
+  let channelCount = 0;
+  let processedChannels = 0;
+  let timeoutDuration = 30000; // Default 30s
+  let timeout;
 
   const sendError = (message) => {
     if (!hasResponded) {
       hasResponded = true;
       try {
-        // Fallback to hardcoded guide.xml
         const fallbackContent = fs.readFileSync('guide.xml', 'utf8');
         console.log('[EPG] Falling back to static guide.xml');
         res.setHeader('Content-Type', 'application/xml');
@@ -50,6 +53,21 @@ app.get("/epg.xml", (req, res) => {
     }
   };
 
+  const resetTimeout = () => {
+    if (timeout) clearTimeout(timeout);
+    // Calculate timeout based on remaining channels (10s per channel + 30s buffer)
+    const remainingChannels = channelCount - processedChannels;
+    timeoutDuration = Math.max(30000, remainingChannels * 10000 + 30000);
+    timeout = setTimeout(() => {
+      if (!hasResponded) {
+        console.error(`[EPG] Process timeout after ${timeoutDuration/1000}s`);
+        grab.kill('SIGKILL');
+        sendError('EPG generation timed out');
+      }
+    }, timeoutDuration);
+    console.log(`[EPG] Timeout reset to ${timeoutDuration/1000} seconds`);
+  };
+
   const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
   console.log(`[EPG] Command: npm ${args.join(' ')}`);
 
@@ -58,16 +76,33 @@ app.get("/epg.xml", (req, res) => {
     cwd: process.cwd()
   });
 
-  const timeout = setTimeout(() => {
-    if (!hasResponded) {
-      console.error('[EPG] Process timeout');
-      grab.kill('SIGKILL');
-      sendError('EPG generation timed out');
-    }
-  }, 30000);
+  // Initial timeout
+  resetTimeout();
 
   grab.stdout.on('data', (data) => {
-    console.log(`[EPG] stdout: ${data.toString().trim()}`);
+    const output = data.toString().trim();
+    console.log(`[EPG] stdout: ${output}`);
+
+    // Detect channel count
+    if (output.includes('found') && output.includes('channel(s)')) {
+      const match = output.match(/found (\d+) channel\(s\)/);
+      if (match) {
+        channelCount = parseInt(match[1]);
+        console.log(`[EPG] Detected ${channelCount} channels`);
+        resetTimeout();
+      }
+    }
+
+    // Track progress
+    if (output.match(/\[\d+\/\d+\] .+ \(\d+ programs\)/)) {
+      processedChannels++;
+      resetTimeout();
+    }
+
+    // Detect completion
+    if (output.includes('done in')) {
+      clearTimeout(timeout);
+    }
   });
 
   grab.stderr.on('data', (data) => {
