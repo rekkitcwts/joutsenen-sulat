@@ -3,7 +3,7 @@ const express = require("express");
 const tmp = require("tmp");
 const fs = require("fs");
 const app = express();
-const path = '/tmp/guide.xml';
+const path = tmp.fileSync().name; // Use this instead of hardcoding '/tmp/guide.xml'
 const port = process.env.PORT || 3001;
 
 // From Render AI assistant
@@ -15,13 +15,24 @@ const tmpDir = tmp.dirSync();
 app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
 app.get("/epg.xml", (req, res) => {
-  const args = ['run', 'grab', '--', '--site=savedchannels.xml', `--output=${path}`];
+  const tempFile = tmp.fileSync(); // Create a temp file
+  const args = ['run', 'grab', '--', '--site=savedchannels.xml', `--output=${tempFile.name}`];
   const grab = spawn('npm', args);
 
   grab.on('close', (code) => {
     if (code === 0) {
       res.setHeader('Content-Type', 'application/xml');
-      fs.createReadStream(path).pipe(res);
+      fs.createReadStream(tempFile.name)
+        .on('error', (err) => {
+          console.error('File read error:', err);
+          res.status(500).send('Error reading EPG file');
+        })
+        .pipe(res)
+        .on('finish', () => {
+          fs.unlink(tempFile.name, (err) => { // Clean up the temp file
+            if (err) console.error('Error deleting temp file:', err);
+          });
+        });
     } else {
       res.status(500).send('Error generating EPG');
     }

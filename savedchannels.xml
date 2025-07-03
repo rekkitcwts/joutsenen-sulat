@@ -3,8 +3,8 @@
   <channel site="tvkaista.org" lang="fi" xmltv_id="" site_id="jim">Jim</channel>
   <channel site="tvkaista.org" lang="fi" xmltv_id="" site_id="kutonen">Kutonen</channel>
   <channel site="tvkaista.org" lang="fi" xmltv_id="" site_id="liv">Liv</channel>
-  <channel site="dna.fi" lang="fi" xmltv_id="" site_id="mtv3">MTV3</channel>
-  <channel site="dna.fi" lang="fi" xmltv_id="" site_id="nelonen">Nelonen</channel>
+  <channel site="allente.fi" lang="fi" xmltv_id="" site_id="mtv3">MTV3</channel>
+  <channel site="allente.fi" lang="fi" xmltv_id="" site_id="nelonen">Nelonen</channel>
   <channel site="tvkaista.org" lang="fi" xmltv_id="" site_id="tlc">TLC</channel>
   <channel site="tvkaista.org" lang="fi" xmltv_id="" site_id="tv5">TV5</channel>
   <channel site="tvkaista.org" lang="fi" xmltv_id="" site_id="sub">Sub</channel>
