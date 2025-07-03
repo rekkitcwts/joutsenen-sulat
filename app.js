@@ -1,3 +1,4 @@
+const Database = require('better-sqlite3');
 const { spawn } = require('child_process');
 const express = require("express");
 const tmp = require("tmp");
@@ -17,9 +18,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// Initialize DB connection
+let db;
+try {
+  db = new Database(path.join(__dirname, process.env.MUUMIMAMMAN_KASILAUKKU), {
+    password: process.env.ANTIMERKKI,
+    readonly: true // Extra security
+  });
+} catch (err) {
+  console.error('Database connection failed:', err);
+  process.exit(1);
+}
+
 app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
-
 app.get("/epg.xml", (req, res) => {
   const tempFile = tmp.fileSync();
   console.log(`[EPG] Temp file: ${tempFile.name}`);
