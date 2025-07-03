@@ -16,7 +16,7 @@ app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
 app.get("/epg.xml", (req, res) => {
   const tempFile = tmp.fileSync(); // Create a temp file
-  const args = ['run', 'grab', '--', '--site=savedchannels.xml', `--output=${tempFile.name}`];
+  const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
   const grab = spawn('npm', args);
 
   grab.on('close', (code) => {
