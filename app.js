@@ -12,11 +12,33 @@ fs.writeFileSync(tmpFile.name, "temporary data");
 
 const tmpDir = tmp.dirSync();
 
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
 app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
 app.get("/epg.xml", (req, res) => {
   const tempFile = tmp.fileSync();
   console.log(`[EPG] Temp file: ${tempFile.name}`);
+
+  let hasResponded = false; // Track if we've sent a response
+
+  const sendError = (message) => {
+    if (!hasResponded) {
+      hasResponded = true;
+      res.status(500).send(message);
+    }
+  };
+
+  const sendSuccess = (content) => {
+    if (!hasResponded) {
+      hasResponded = true;
+      res.setHeader('Content-Type', 'application/xml');
+      res.send(content);
+    }
+  };
 
   const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
   console.log(`[EPG] Command: npm ${args.join(' ')}`);
@@ -26,7 +48,16 @@ app.get("/epg.xml", (req, res) => {
     cwd: process.cwd()
   });
 
-  // Capture all output for debugging
+  // Add timeout (30 seconds)
+  const timeout = setTimeout(() => {
+    if (!hasResponded) {
+      console.error('[EPG] Process timeout');
+      grab.kill('SIGKILL');
+      sendError('EPG generation timed out');
+    }
+  }, 30000);
+
+  // Process output handlers
   grab.stdout.on('data', (data) => {
     console.log(`[EPG] stdout: ${data.toString().trim()}`);
   });
@@ -35,18 +66,11 @@ app.get("/epg.xml", (req, res) => {
     console.error(`[EPG] stderr: ${data.toString().trim()}`);
   });
 
-  // Add timeout (30 seconds)
-  const timeout = setTimeout(() => {
-    if (!res.headersSent) {
-      console.error('[EPG] Process timeout');
-      grab.kill('SIGKILL');
-      res.status(500).send('EPG generation timed out');
-    }
-  }, 30000);
-
   grab.on('close', (code) => {
     clearTimeout(timeout);
     console.log(`[EPG] Process exited with code ${code}`);
+
+    if (hasResponded) return;
 
     if (code === 0) {
       try {
@@ -57,14 +81,13 @@ app.get("/epg.xml", (req, res) => {
           throw new Error('EPG file suspiciously small');
         }
 
-        res.setHeader('Content-Type', 'application/xml');
-        res.send(content);
+        sendSuccess(content);
       } catch (err) {
         console.error('[EPG] File error:', err);
-        res.status(500).send('EPG processing failed');
+        sendError('EPG processing failed');
       }
     } else {
-      res.status(500).send('EPG generation failed');
+      sendError('EPG generation failed');
     }
 
     // Cleanup
@@ -75,7 +98,8 @@ app.get("/epg.xml", (req, res) => {
 
   grab.on('error', (err) => {
     console.error('[EPG] Spawn error:', err);
-    res.status(500).send('EPG process failed to start');
+    clearTimeout(timeout);
+    sendError('EPG process failed to start');
   });
 });
 
