@@ -19,16 +19,26 @@ app.use((req, res, next) => {
 
 app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
+
 app.get("/epg.xml", (req, res) => {
   const tempFile = tmp.fileSync();
   console.log(`[EPG] Temp file: ${tempFile.name}`);
 
-  let hasResponded = false; // Track if we've sent a response
+  let hasResponded = false;
 
   const sendError = (message) => {
     if (!hasResponded) {
       hasResponded = true;
-      res.status(500).send(message);
+      try {
+        // Fallback to hardcoded guide.xml
+        const fallbackContent = fs.readFileSync('guide.xml', 'utf8');
+        console.log('[EPG] Falling back to static guide.xml');
+        res.setHeader('Content-Type', 'application/xml');
+        res.send(fallbackContent);
+      } catch (fallbackErr) {
+        console.error('[EPG] Fallback failed:', fallbackErr);
+        res.status(500).send(message);
+      }
     }
   };
 
@@ -40,7 +50,7 @@ app.get("/epg.xml", (req, res) => {
     }
   };
 
-  const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
+  const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`, `--maxconnections=2`];
   console.log(`[EPG] Command: npm ${args.join(' ')}`);
 
   const grab = spawn('npm', args, {
@@ -48,7 +58,6 @@ app.get("/epg.xml", (req, res) => {
     cwd: process.cwd()
   });
 
-  // Add timeout (30 seconds)
   const timeout = setTimeout(() => {
     if (!hasResponded) {
       console.error('[EPG] Process timeout');
@@ -57,7 +66,6 @@ app.get("/epg.xml", (req, res) => {
     }
   }, 30000);
 
-  // Process output handlers
   grab.stdout.on('data', (data) => {
     console.log(`[EPG] stdout: ${data.toString().trim()}`);
   });
@@ -87,10 +95,10 @@ app.get("/epg.xml", (req, res) => {
         sendError('EPG processing failed');
       }
     } else {
+      console.error('[EPG] Generation failed, using fallback');
       sendError('EPG generation failed');
     }
 
-    // Cleanup
     fs.unlink(tempFile.name, (err) => {
       if (err) console.error('[EPG] Cleanup failed:', err);
     });
