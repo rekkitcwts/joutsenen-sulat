@@ -1,10 +1,11 @@
 const Database = require('better-sqlite3');
 const { spawn } = require('child_process');
 const express = require("express");
+const path = require('path'); // Add this with other requires
 const tmp = require("tmp");
 const fs = require("fs");
 const app = express();
-const path = tmp.fileSync().name; // Use this instead of hardcoding '/tmp/guide.xml'
+const tempFilePath = tmp.fileSync().name; // Use this instead of hardcoding '/tmp/guide.xml'
 const port = process.env.PORT || 3001;
 
 // From Render AI assistant
