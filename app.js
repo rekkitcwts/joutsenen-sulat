@@ -13,6 +13,48 @@ fs.writeFileSync(tmpFile.name, "temporary data");
 
 const tmpDir = tmp.dirSync();
 
+// Add this right after your tmpDir initialization
+// Clear old cache files on startup
+try {
+  const files = fs.readdirSync(tmpDir.name);
+  files.forEach(file => {
+    if (file.endsWith('_cache.xml')) {
+      fs.unlinkSync(path.join(tmpDir.name, file));
+    }
+  });
+} catch (e) {
+  console.log('[Startup] No cache files to clean');
+}
+
+// Add near your other requires
+const { parseString } = require('xml2js');
+
+// Utility functions
+const getCurrentDateString = () => {
+  const now = new Date();
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+};
+
+const extractXMLDate = (xmlContent) => {
+  try {
+    const match = xmlContent.match(/<tv[^>]*date=["']([^"']+)["']/i);
+    return match ? match[1] : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const checkFileFreshness = (filePath) => {
+  try {
+    if (!fs.existsSync(filePath)) return false;
+    const content = fs.readFileSync(filePath, 'utf8');
+    const xmlDate = extractXMLDate(content);
+    return xmlDate === getCurrentDateString();
+  } catch (e) {
+    return false;
+  }
+};
+
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
@@ -30,16 +72,29 @@ try {
   process.exit(1);
 }
 
+let currentdate;
+let last_tempfile;
+
 app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
 app.get("/epg.xml", (req, res) => {
+  // First check if we have a fresh cached file
+  const cachedFile = path.join(tmpDir.name, 'epg_cache.xml');
+  
+  if (fs.existsSync(cachedFile) && checkFileFreshness(cachedFile)) {
+    console.log('[EPG] Serving cached file');
+    res.setHeader('Content-Type', 'application/xml');
+    return fs.createReadStream(cachedFile).pipe(res);
+  }
+
+  // If no fresh cache, proceed with generation
   const tempFile = tmp.fileSync();
   console.log(`[EPG] Temp file: ${tempFile.name}`);
 
   let hasResponded = false;
   let channelCount = 0;
   let processedChannels = 0;
-  let timeoutDuration = 30000; // Default 30s
+  let timeoutDuration = 30000;
   let timeout;
 
   const sendError = (message) => {
@@ -60,6 +115,10 @@ app.get("/epg.xml", (req, res) => {
   const sendSuccess = (content) => {
     if (!hasResponded) {
       hasResponded = true;
+      // Cache the successful response
+      fs.writeFileSync(cachedFile, content);
+      console.log(`[EPG] Cached response to ${cachedFile}`);
+      
       res.setHeader('Content-Type', 'application/xml');
       res.send(content);
     }
@@ -67,7 +126,6 @@ app.get("/epg.xml", (req, res) => {
 
   const resetTimeout = () => {
     if (timeout) clearTimeout(timeout);
-    // Calculate timeout based on remaining channels (10s per channel + 30s buffer)
     const remainingChannels = channelCount - processedChannels;
     timeoutDuration = Math.max(30000, remainingChannels * 10000 + 30000);
     timeout = setTimeout(() => {
@@ -88,14 +146,12 @@ app.get("/epg.xml", (req, res) => {
     cwd: process.cwd()
   });
 
-  // Initial timeout
   resetTimeout();
 
   grab.stdout.on('data', (data) => {
     const output = data.toString().trim();
     console.log(`[EPG] stdout: ${output}`);
 
-    // Detect channel count
     if (output.includes('found') && output.includes('channel(s)')) {
       const match = output.match(/found (\d+) channel\(s\)/);
       if (match) {
@@ -105,13 +161,11 @@ app.get("/epg.xml", (req, res) => {
       }
     }
 
-    // Track progress
     if (output.match(/\[\d+\/\d+\] .+ \(\d+ programs\)/)) {
       processedChannels++;
       resetTimeout();
     }
 
-    // Detect completion
     if (output.includes('done in')) {
       clearTimeout(timeout);
     }

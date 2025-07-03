@@ -116,6 +116,7 @@
     "transliteration": "^2.2.0",
     "tsx": "^4.19.2",
     "unzipit": "^1.4.0",
-    "wildcard-match": "^5.1.2"
+    "wildcard-match": "^5.1.2",
+    "xml2js": "^0.6.2"
   }
 }
