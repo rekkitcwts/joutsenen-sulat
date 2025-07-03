@@ -50,7 +50,7 @@ app.get("/epg.xml", (req, res) => {
     }
   };
 
-  const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`, `--maxconnections=2`];
+  const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
   console.log(`[EPG] Command: npm ${args.join(' ')}`);
 
   const grab = spawn('npm', args, {
