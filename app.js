@@ -15,32 +15,67 @@ const tmpDir = tmp.dirSync();
 app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
 app.get("/epg.xml", (req, res) => {
-  const tempFile = tmp.fileSync(); // Create a temp file
+  const tempFile = tmp.fileSync();
+  console.log(`[EPG] Temp file: ${tempFile.name}`);
+
   const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
-  const grab = spawn('npm', args);
+  console.log(`[EPG] Command: npm ${args.join(' ')}`);
+
+  const grab = spawn('npm', args, {
+    stdio: 'pipe',
+    cwd: process.cwd()
+  });
+
+  // Capture all output for debugging
+  grab.stdout.on('data', (data) => {
+    console.log(`[EPG] stdout: ${data.toString().trim()}`);
+  });
+
+  grab.stderr.on('data', (data) => {
+    console.error(`[EPG] stderr: ${data.toString().trim()}`);
+  });
+
+  // Add timeout (30 seconds)
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error('[EPG] Process timeout');
+      grab.kill('SIGKILL');
+      res.status(500).send('EPG generation timed out');
+    }
+  }, 30000);
 
   grab.on('close', (code) => {
+    clearTimeout(timeout);
+    console.log(`[EPG] Process exited with code ${code}`);
+
     if (code === 0) {
-      res.setHeader('Content-Type', 'application/xml');
-      fs.createReadStream(tempFile.name)
-        .on('error', (err) => {
-          console.error('File read error:', err);
-          res.status(500).send('Error reading EPG file');
-        })
-        .pipe(res)
-        .on('finish', () => {
-          fs.unlink(tempFile.name, (err) => { // Clean up the temp file
-            if (err) console.error('Error deleting temp file:', err);
-          });
-        });
+      try {
+        const content = fs.readFileSync(tempFile.name, 'utf8');
+        console.log(`[EPG] File content (first 200 chars): ${content.substring(0, 200)}...`);
+        
+        if (content.length < 100) {
+          throw new Error('EPG file suspiciously small');
+        }
+
+        res.setHeader('Content-Type', 'application/xml');
+        res.send(content);
+      } catch (err) {
+        console.error('[EPG] File error:', err);
+        res.status(500).send('EPG processing failed');
+      }
     } else {
-      res.status(500).send('Error generating EPG');
+      res.status(500).send('EPG generation failed');
     }
+
+    // Cleanup
+    fs.unlink(tempFile.name, (err) => {
+      if (err) console.error('[EPG] Cleanup failed:', err);
+    });
   });
-  
+
   grab.on('error', (err) => {
-    console.error('Spawn error:', err);
-    res.status(500).send('Execution failed');
+    console.error('[EPG] Spawn error:', err);
+    res.status(500).send('EPG process failed to start');
   });
 });
 
