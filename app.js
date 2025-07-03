@@ -21,7 +21,7 @@ app.use((req, res, next) => {
 // Initialize DB connection
 let db;
 try {
-  db = new Database(path.join(__dirname, process.env.MUUMIMAMMAN_KASILAUKKU), {
+  db = new Database(process.env.MUUMIMAMMAN_KASILAUKKU, {
     password: process.env.ANTIMERKKI,
     readonly: true // Extra security
   });
