@@ -76,6 +76,14 @@ try {
 let currentdate;
 let last_tempfile;
 
+// Add before your routes
+app.use((req, res, next) => {
+  // Basic protection against abuse
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  next();
+});
+
 app.get("/", (req, res) => res.type('html').send(html));
 app.get("/health", (req, res) => res.type('html').send(html));
 app.get("/epg.xml", (req, res) => {

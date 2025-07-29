@@ -11,4 +11,6 @@
   <channel site="tv24.se" lang="sv" xmltv_id="" site_id="yle-teema-fem">Yle Teema Fem</channel>
   <channel site="tv24.se" lang="fi" xmltv_id="" site_id="yle-tv1">Yle TV1</channel>
   <channel site="tv24.se" lang="fi" xmltv_id="" site_id="yle-tv2">Yle TV2</channel>
+  <channel site="tv.magenta.at" lang="de" xmltv_id="ORF1.at@HD" site_id="206965288091">ORF 1 HD</channel>
+  <channel site="tv.magenta.at" lang="de" xmltv_id="ORF2Wien.at@HD" site_id="206963752351">ORF 2 Wien HD</channel>
 </channels>
