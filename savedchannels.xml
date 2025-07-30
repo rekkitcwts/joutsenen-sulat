@@ -14,4 +14,5 @@
   <channel site="tvheute.at" lang="de" xmltv_id="ORF1.at" site_id="orf1">ORF1</channel>
   <channel site="tvheute.at" lang="de" xmltv_id="ORF2.at" site_id="orf2">ORF2</channel>
   <channel site="tvpassport.com" lang="en" xmltv_id="CartoonNetwork.ca" site_id="cartoon-network-canada--east/162">Cartoon Network Canada - East</channel>
+  <channel site="tvpassport.com" lang="en" xmltv_id="DisneyXDEast.us" site_id="disney-xd-usa--eastern-feed/1053">Disney XD USA - Eastern Feed</channel>
 </channels>
