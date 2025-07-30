@@ -13,5 +13,5 @@
   <channel site="tv24.se" lang="fi" xmltv_id="" site_id="yle-tv2">Yle TV2</channel>
   <channel site="tvheute.at" lang="de" xmltv_id="ORF1.at" site_id="orf1">ORF1</channel>
   <channel site="tvheute.at" lang="de" xmltv_id="ORF2.at" site_id="orf2">ORF2</channel>
-  <channel site="tvguide.com" lang="en" xmltv_id="CartoonNetwork.us@East" site_id="9200004848">Cartoon Network</channel>
+  <channel site="tvpassport.com" lang="en" xmltv_id="" site_id="cartoon-network-canada--east/162">Cartoon Network Canada - East</channel>
 </channels>
