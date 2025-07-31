@@ -8,7 +8,7 @@ const app = express();
 const tempFilePath = tmp.fileSync().name; // Use this instead of hardcoding '/tmp/guide.xml'
 const port = process.env.PORT || 3001;
 
-// From Render AI assistant
+// Defines temp file directory
 const tmpFile = tmp.fileSync();
 fs.writeFileSync(tmpFile.name, "temporary data");
 

@@ -1,8 +1,10 @@
 # README
 
-This is the [Express](https://expressjs.com) [Hello world](https://expressjs.com/en/starter/hello-world.html) example on [Render](https://render.com).
+This is a repository for a cable company website, to be used for personal and portfolio purposes.
 
-The app in this repo is deployed at [https://express.onrender.com](https://express.onrender.com).
+You can view the website [https://joutsenen-sulat.onrender.com/](here).
+
+Some features are forked from [https://github.com/iptv-org/epg](iptv-org/epg) to be used on hosting that does not allow persistent storage, such as [Render](https://render.com).
 
 ## Deployment
 
