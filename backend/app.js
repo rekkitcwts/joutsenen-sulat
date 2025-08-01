@@ -90,7 +90,7 @@ try { fs.unlinkSync(lockFile); } catch (e) {}
 // =============================================
 // 4. Database Connection
 // =============================================
-let db;
+/*let db;
 try {
 db = new Database(process.env.MUUMIMAMMAN_KASILAUKKU, {
 password: process.env.ANTIMERKKI,
@@ -99,7 +99,7 @@ readonly: true
 } catch (err) {
 console.error('Database connection failed:', err);
 process.exit(1);
-}
+}*/
 
 // =============================================
 // 5. Express Application Setup
