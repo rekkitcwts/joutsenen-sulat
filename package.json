@@ -2,7 +2,7 @@
   "name": "joutsenen-sulat",
   "version": "1.0.0",
   "description": "Express Hello World on Render",
-  "main": "app.js",
+  "main": "backend/app.js",
   "repository": "https://github.com/rekkitcwts/joutsenen-sulat",
   "author": "Clyde Datastruct",
   "license": "MIT",
@@ -12,20 +12,26 @@
     "act:update": "act workflow_dispatch -W .github/workflows/update.yml",
     "api:load": "npx tsx scripts/commands/api/load.ts",
     "api:generate": "npx tsx scripts/commands/api/generate.ts",
+    "build": "cd frontend && next build && cd ../backend && npm install",
     "channels:lint": "npx tsx scripts/commands/channels/lint.mts",
     "channels:parse": "npx tsx scripts/commands/channels/parse.ts",
     "channels:edit": "npx tsx scripts/commands/channels/edit.ts",
     "channels:validate": "npx tsx scripts/commands/channels/validate.ts",
+    "dev": "concurrently \"cd backend && nodemon app.js\" \"cd frontend && next dev\"",
     "sites:init": "npx tsx scripts/commands/sites/init.ts",
     "sites:update": "npx tsx scripts/commands/sites/update.ts",
     "grab": "npx tsx scripts/commands/epg/grab.ts",
-    "lint": "npx eslint \"{scripts,tests,sites}/**/*.{ts,mts,js}\"",
+    "lint": "npm run lint:backend && npm run lint:frontend && npm run lint:scripts",
+    "lint:backend": "eslint backend/**/*.js",
+    "lint:frontend": "eslint frontend/**/*.{js,jsx,ts,tsx}",
+    "lint:scripts": "eslint \"{scripts,tests,sites}/**/*.{ts,mts,js}\"",
+    "lint:fix": "npm run lint:backend -- --fix && npm run lint:frontend -- --fix && npm run lint:scripts -- --fix",
     "test": "run-script-os",
     "test:win32": "SET \"TZ=Pacific/Nauru\" && npx jest --runInBand",
     "test:default": "TZ=Pacific/Nauru npx jest --runInBand",
     "postinstall": "skip-postinstall || npm run api:load",
     "prepare": "husky",
-    "start": "node app.js"
+    "start": "node backend/app.js"
   },
   "jest": {
     "setupFiles": [
@@ -118,5 +124,22 @@
     "unzipit": "^1.4.0",
     "wildcard-match": "^5.1.2",
     "xml2js": "^0.6.2"
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "canvas-confetti": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
+    "eslint-config-next": "^14.1.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "nodemon": "^3.1.0",
+    "concurrently": "^8.2.2"
   }
 }
