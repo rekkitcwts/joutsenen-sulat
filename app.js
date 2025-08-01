@@ -56,6 +56,27 @@ const checkFileFreshness = (filePath) => {
   }
 };
 
+// Add these near your other constants
+const lockFile = path.join(tmpDir.name, 'epg_generation.lock');
+let isGenerating = false;
+
+// Helper function to manage the lock
+const withGenerationLock = async (fn) => {
+  while (isGenerating) {
+    console.log('[EPG] Waiting for existing generation to complete...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  try {
+    isGenerating = true;
+    fs.writeFileSync(lockFile, process.pid.toString());
+    return await fn();
+  } finally {
+    isGenerating = false;
+    try { fs.unlinkSync(lockFile); } catch (e) {}
+  }
+};
+
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
