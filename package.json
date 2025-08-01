@@ -18,7 +18,7 @@
     "channels:parse": "npx tsx scripts/commands/channels/parse.ts",
     "channels:edit": "npx tsx scripts/commands/channels/edit.ts",
     "channels:validate": "npx tsx scripts/commands/channels/validate.ts",
-    "dev": "concurrently \"cd backend && nodemon app.js\" \"cd frontend && npm run dev\""
+    "dev": "concurrently \"cd backend && nodemon app.js\" \"cd frontend && npm run dev\"",
     "sites:init": "npx tsx scripts/commands/sites/init.ts",
     "sites:update": "npx tsx scripts/commands/sites/update.ts",
     "grab": "npx tsx scripts/commands/epg/grab.ts",
