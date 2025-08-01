@@ -105,150 +105,173 @@ process.exit(1);
 // 5. Express Application Setup
 // =============================================
 nextApp.prepare().then(() => {
-const app = express();
+    const app = express();
 
-// Security middleware
-app.use((req, res, next) => {
-res.set('X-Content-Type-Options', 'nosniff');
-res.set('X-Frame-Options', 'DENY');
-next();
-});
+    // Error handling middleware
+  app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).send('Internal Server Error');
+  });
 
-// Logging middleware
-app.use((req, res, next) => {
-console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-next();
-});
+    // Security middleware
+    app.use((req, res, next) => {
+        res.set('X-Content-Type-Options', 'nosniff');
+        res.set('X-Frame-Options', 'DENY');
+        next();
+    });
+
+    // Logging middleware
+    app.use((req, res, next) => {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+        next();
+    });
 
 // ===========================================
 // 6. API Routes
 // ===========================================
-app.get('/health', (req, res) => {
-res.status(200).json({ status: 'OK' });
-});
+    app.get('/health', (req, res) => {
+        res.status(200).json({ status: 'OK' });
+    });
 
-app.get('/epg.xml', async (req, res) => {
-const cachedFile = path.join(tmpDir.name, 'epg_cache.xml');
+    app.get('/epg.xml', async (req, res) => {
+        const cachedFile = path.join(tmpDir.name, 'epg_cache.xml');
 
-if (fs.existsSync(cachedFile) && checkFileFreshness(cachedFile)) {
-console.log('[EPG] Serving cached file');
-res.setHeader('Content-Type', 'application/xml');
-return fs.createReadStream(cachedFile).pipe(res);
-}
+        if (fs.existsSync(cachedFile) && checkFileFreshness(cachedFile)) {
+            console.log('[EPG] Serving cached file');
+            res.setHeader('Content-Type', 'application/xml');
+            return fs.createReadStream(cachedFile).pipe(res);
+        }
 
-return withGenerationLock(async () => {
-const tempFile = tmp.fileSync();
-console.log(`[EPG] Temp file: ${tempFile.name}`);
+        return withGenerationLock(async () => {
+        const tempFile = tmp.fileSync();
+        console.log(`[EPG] Temp file: ${tempFile.name}`);
 
-let hasResponded = false;
-let channelCount = 0;
-let processedChannels = 0;
-let timeoutDuration = 30000;
-let timeout;
+        let hasResponded = false;
+        let channelCount = 0;
+        let processedChannels = 0;
+        let timeoutDuration = 30000;
+        let timeout;
 
-const sendError = (message) => {
-if (!hasResponded) {
-hasResponded = true;
-try {
-const fallbackContent = fs.readFileSync(path.join(__dirname, 'guide.xml'), 'utf8');
-console.log('[EPG] Falling back to static guide.xml');
-res.setHeader('Content-Type', 'application/xml');
-res.send(fallbackContent);
-} catch (fallbackErr) {
-console.error('[EPG] Fallback failed:', fallbackErr);
-res.status(500).send(message);
-}
-}
-};
+        const sendError = (message) => {
+            if (!hasResponded) {
+            hasResponded = true;
+                try {
+                    const fallbackContent = fs.readFileSync(path.join(__dirname, 'guide.xml'), 'utf8');
+                    console.log('[EPG] Falling back to static guide.xml');
+                    res.setHeader('Content-Type', 'application/xml');
+                    res.send(fallbackContent);
+                } 
+                catch (fallbackErr) {
+                    console.error('[EPG] Fallback failed:', fallbackErr);
+                    res.status(500).send(message);
+                }
+            }
+        };
 
-const sendSuccess = (content) => {
-if (!hasResponded) {
-hasResponded = true;
-fs.writeFileSync(cachedFile, content);
-console.log(`[EPG] Cached response to ${cachedFile}`);
-res.setHeader('Content-Type', 'application/xml');
-res.send(content);
-}
-};
+        const sendSuccess = (content) => {
+        if (!hasResponded) {
+        hasResponded = true;
+        fs.writeFileSync(cachedFile, content);
+        console.log(`[EPG] Cached response to ${cachedFile}`);
+        res.setHeader('Content-Type', 'application/xml');
+        res.send(content);
+        }
+        };
 
-const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
-console.log(`[EPG] Command: npm ${args.join(' ')}`);
+        const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
+        console.log(`[EPG] Command: npm ${args.join(' ')}`);
 
-const grab = spawn('npm', args, { stdio: 'pipe', cwd: process.cwd() });
+        const grab = spawn('npm', args, { stdio: 'pipe', cwd: process.cwd() });
 
-resetTimeout();
+        resetTimeout();
 
-grab.stdout.on('data', (data) => {
-const output = data.toString().trim();
-console.log(`[EPG] stdout: ${output}`);
+        grab.stdout.on('data', (data) => {
+        const output = data.toString().trim();
+        console.log(`[EPG] stdout: ${output}`);
 
-if (output.includes('found') && output.includes('channel(s)')) {
-const match = output.match(/found (\d+) channel\(s\)/);
-if (match) {
-channelCount = parseInt(match[1]);
-console.log(`[EPG] Detected ${channelCount} channels`);
-resetTimeout();
-}
-}
+        if (output.includes('found') && output.includes('channel(s)')) {
+            const match = output.match(/found (\d+) channel\(s\)/);
+            if (match) {
+                channelCount = parseInt(match[1]);
+                console.log(`[EPG] Detected ${channelCount} channels`);
+                resetTimeout();
+            }
+        }
 
-if (output.match(/\[\d+\/\d+\] .+ \(\d+ programs\)/)) {
-processedChannels++;
-resetTimeout();
-}
+        if (output.match(/\[\d+\/\d+\] .+ \(\d+ programs\)/)) {
+            processedChannels++;
+            resetTimeout();
+        }
 
-if (output.includes('done in')) {
-clearTimeout(timeout);
-}
-});
+        if (output.includes('done in')) {
+                clearTimeout(timeout);
+            }
+        });
 
-grab.stderr.on('data', (data) => {
-console.error(`[EPG] stderr: ${data.toString().trim()}`);
-});
+        grab.stderr.on('data', (data) => {
+            console.error(`[EPG] stderr: ${data.toString().trim()}`);
+        });
 
-grab.on('close', (code) => {
-clearTimeout(timeout);
-console.log(`[EPG] Process exited with code ${code}`);
+        grab.on('close', (code) => {
+        clearTimeout(timeout);
+        console.log(`[EPG] Process exited with code ${code}`);
 
-if (hasResponded) return;
+        if (hasResponded) return;
 
-if (code === 0) {
-try {
-const content = fs.readFileSync(tempFile.name, 'utf8');
-console.log(`[EPG] File content (first 200 chars): ${content.substring(0, 200)}...`);
+        if (code === 0) {
+            try {
+                const content = fs.readFileSync(tempFile.name, 'utf8');
+                console.log(`[EPG] File content (first 200 chars): ${content.substring(0, 200)}...`);
 
-if (content.length < 100) {
-throw new Error('EPG file suspiciously small');
-}
+                if (content.length < 100) {
+                    throw new Error('EPG file suspiciously small');
+                }
 
-sendSuccess(content);
-} catch (err) {
-console.error('[EPG] File error:', err);
-sendError('EPG processing failed');
-}
-} else {
-console.error('[EPG] Generation failed, using fallback');
-sendError('EPG generation failed');
-}
+                sendSuccess(content);
+            }
+            catch (err) {
+                console.error('[EPG] File error:', err);
+                sendError('EPG processing failed');
+            }
+        } 
+        else {
+            console.error('[EPG] Generation failed, using fallback');
+            sendError('EPG generation failed');
+        }
 
-fs.unlink(tempFile.name, (err) => {
-if (err) console.error('[EPG] Cleanup failed:', err);
-});
-});
+            fs.unlink(tempFile.name, (err) => {
+                if (err) console.error('[EPG] Cleanup failed:', err);
+            });
+        });
 
-grab.on('error', (err) => {
-console.error('[EPG] Spawn error:', err);
-clearTimeout(timeout);
-sendError('EPG process failed to start');
-});
-});
-});
+        grab.on('error', (err) => {
+            console.error('[EPG] Spawn error:', err);
+            clearTimeout(timeout);
+            sendError('EPG process failed to start');
+        });
+
+    });
+    });
 
 // ===========================================
 // 7. Let Next.js handle all other routes
 // ===========================================
-app.get('*', (req, res) => {
-return handle(req, res);
-});
+const nextHandler = handle;
+
+// Custom handler to catch errors
+const handleNextRequests = (req, res) => {
+  console.log(`Handling Next.js route: ${req.url}`);
+  return nextHandler(req, res).catch(err => {
+    console.error('Next.js request failed:', err);
+    res.status(500).send('Internal Server Error');
+  });
+};
+
+
+// Next.js catch-all handler
+    app.use((req, res) => {
+        return handle(req, res);
+    });
 
 // ===========================================
 // 8. Start Server
