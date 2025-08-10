@@ -183,7 +183,8 @@ nextApp.prepare().then(() => {
         }
         else
         {
-            console.log('[PERKELE] If you can see this, it means that the EPG might not generate');
+            console.log('[PERKELE] If you can see this, it means that the EPG might not generate. Checking current directory for debug purposes');
+            console.log(__dirname);
         }
 
         const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
