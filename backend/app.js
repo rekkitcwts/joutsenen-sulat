@@ -178,16 +178,16 @@ nextApp.prepare().then(() => {
         }
         };
 
-        if (fs.existsSync('savedchannels.xml')) {
+        const savedChannels = path.join(__dirname, 'savedchannels.xml');
+        
+        if (fs.existsSync(savedChannels)) {
             console.log(`[FILE CHECK] Debugging if savedchannels.xml exists`);
         }
         else
         {
             console.log('[PERKELE] If you can see this, it means that the EPG might not generate. Checking current directory for debug purposes');
-            console.log(__dirname);
+            console.log(savedChannels);
         }
-
-        const savedChannels = path.join(__dirname, 'savedchannels.xml');
 
         const args = ['run', 'grab', '--', `--channels=${savedChannels}`, `--output=${tempFile.name}`];
         console.log(`[EPG] Command: npm ${args.join(' ')}`);
