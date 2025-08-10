@@ -181,6 +181,10 @@ nextApp.prepare().then(() => {
         if (fs.existsSync('savedchannels.xml')) {
             console.log(`[FILE CHECK] Debugging if savedchannels.xml exists`);
         }
+        else
+        {
+            console.log('[PERKELE] If you can see this, it means that the EPG might not generate');
+        }
 
         const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
         console.log(`[EPG] Command: npm ${args.join(' ')}`);
