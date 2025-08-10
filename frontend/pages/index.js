@@ -5,7 +5,7 @@ export default function Home() {
   //const [darkMode, setDarkMode] = useState(false);
   
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+    <div>
       <Head>
         <title>Beispiel Cable Services</title>
         {/* Your existing head content */}
