@@ -178,6 +178,10 @@ nextApp.prepare().then(() => {
         }
         };
 
+        if (fs.existsSync('savedchannels.xml')) {
+            console.log(`[FILE CHECK] Debugging if savedchannels.xml exists`);
+        }
+
         const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
         console.log(`[EPG] Command: npm ${args.join(' ')}`);
 

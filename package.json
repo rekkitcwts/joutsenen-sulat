@@ -21,7 +21,7 @@
     "dev": "concurrently \"cd backend && nodemon app.js\" \"cd frontend && npm run dev\"",
     "sites:init": "npx tsx scripts/commands/sites/init.ts",
     "sites:update": "npx tsx scripts/commands/sites/update.ts",
-    "grab": "npx tsx ../scripts/commands/epg/grab.ts",
+    "grab": "npx tsx scripts/commands/epg/grab.ts",
     "lint": "npm run lint:backend && npm run lint:frontend && npm run lint:scripts",
     "lint:backend": "eslint backend/**/*.js",
     "lint:frontend": "eslint frontend/**/*.{js,jsx,ts,tsx}",
