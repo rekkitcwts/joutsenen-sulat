@@ -16,10 +16,10 @@ export default function Home() {
       </header>
       
       <main>
-        <HeroSection />
+        /*<HeroSection />
         <ChannelShowcase />
         <EPGPreview />
-        <ServiceAreas />
+        <ServiceAreas />*/
       </main>
       
       <footer>
