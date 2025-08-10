@@ -187,7 +187,9 @@ nextApp.prepare().then(() => {
             console.log(__dirname);
         }
 
-        const args = ['run', 'grab', '--', '--channels=savedchannels.xml', `--output=${tempFile.name}`];
+        const savedChannels = path.join(__dirname, 'savedchannels.xml');
+
+        const args = ['run', 'grab', '--', `--channels=${savedChannels}`, `--output=${tempFile.name}`];
         console.log(`[EPG] Command: npm ${args.join(' ')}`);
 
         const grab = spawn('npm', args, { stdio: 'pipe', cwd: process.cwd() });
