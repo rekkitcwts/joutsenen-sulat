@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import HeroSection from '@/components/HeroSection';
 import { useEffect } from 'react';
 
 export default function Home() {
@@ -7,7 +8,7 @@ export default function Home() {
   return (
     <div>
       <Head>
-        <title>Beispiel Cable Services</title>
+        <title>Swan Feathers Cable</title>
         {/* Your existing head content */}
       </Head>
       
@@ -16,10 +17,7 @@ export default function Home() {
       </header>
       
       <main>
-        /*<HeroSection />
-        <ChannelShowcase />
-        <EPGPreview />
-        <ServiceAreas />*/
+        <HeroSection />
       </main>
       
       <footer>
