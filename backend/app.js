@@ -152,6 +152,16 @@ nextApp.prepare().then(() => {
         let timeoutDuration = 30000;
         let timeout;
 
+        const resetTimeout = () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (!hasResponded) {
+                    console.error('[EPG] Generation timeout reached');
+                    //sendError('EPG generation timed out');
+                }
+            }, timeoutDuration);
+        };
+
         const sendError = (message) => {
             if (!hasResponded) {
             hasResponded = true;
@@ -192,7 +202,12 @@ nextApp.prepare().then(() => {
         const args = ['run', 'grab', '--', `--channels=${savedChannels}`, `--output=${tempFile.name}`];
         console.log(`[EPG] Command: npm ${args.join(' ')}`);
 
-        const grab = spawn('npm', args, { stdio: 'pipe', cwd: process.cwd() });
+        //const grab = spawn('npm', args, { stdio: 'pipe', cwd: process.cwd() });
+        const grab = spawn('npm', args, {
+            stdio: ['pipe', 'pipe', 'pipe'], // Explicit stdio
+            cwd: __dirname, // Use backend directory explicitly
+            env: { ...process.env, PATH: process.env.PATH } // Pass through PATH
+        });
 
         resetTimeout();
 
